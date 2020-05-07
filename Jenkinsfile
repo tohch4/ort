@@ -110,6 +110,16 @@ pipeline {
         )
 
         /*
+         * ORT evaluator tool parameters.
+         */
+
+        booleanParam(
+            name: 'RUN_EVALUATOR',
+            defaultValue: true,
+            description: 'Run the evaluator tool'
+        )
+
+        /*
          * ORT reporter tool parameters.
          */
 
@@ -269,6 +279,44 @@ pipeline {
                 always {
                     archiveArtifacts(
                         artifacts: 'scanner/out/results/*',
+                        fingerprint: true
+                    )
+                }
+            }
+        }
+
+        stage('Run the ORT evaluator') {
+            when {
+                beforeAgent true
+
+                expression {
+                    params.RUN_EVALUATOR
+                }
+            }
+
+            agent {
+                dockerfile {
+                    additionalBuildArgs DOCKER_BUILD_ARGS
+                    args DOCKER_RUN_ARGS
+                }
+            }
+
+            environment {
+                HOME = "${env.WORKSPACE}@tmp"
+            }
+
+            steps {
+                sh '''
+                    rm -fr evaluator/out/results
+                    /opt/ort/bin/ort $LOG_LEVEL evaluate -f JSON,YAML -i $PROJECT_DIR/current-result.yml -o evaluator/out/results
+                    ln -fs evaluator/out/results/evaluation-result.yml $PROJECT_DIR/current-result.yml
+                '''
+            }
+
+            post {
+                always {
+                    archiveArtifacts(
+                        artifacts: 'evaluator/out/results/*',
                         fingerprint: true
                     )
                 }
