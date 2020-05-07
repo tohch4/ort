@@ -204,6 +204,7 @@ pipeline {
 
                     rm -fr analyzer/out/results
                     /opt/ort/bin/ort $LOG_LEVEL analyze $ALLOW_DYNAMIC_VERSIONS_PARAM $USE_CLEARLY_DEFINED_CURATIONS_PARAM -f JSON,YAML -i $PROJECT_DIR/source -o analyzer/out/results
+                    ln -fs analyzer/out/results/analyzer-result.yml $PROJECT_DIR/current-result.yml
                 '''
 
                 script {
@@ -259,7 +260,8 @@ pipeline {
             steps {
                 sh '''
                     rm -fr scanner/out/results
-                    /opt/ort/bin/ort $LOG_LEVEL scan -f JSON,YAML -i analyzer/out/results/analyzer-result.yml -o scanner/out/results
+                    /opt/ort/bin/ort $LOG_LEVEL scan -f JSON,YAML -i $PROJECT_DIR/current-result.yml -o scanner/out/results
+                    ln -fs scanner/out/results/scan-result.yml $PROJECT_DIR/current-result.yml
                 '''
             }
 
@@ -296,7 +298,7 @@ pipeline {
             steps {
                 sh '''
                     rm -fr reporter/out/results
-                    /opt/ort/bin/ort $LOG_LEVEL report -f CycloneDX,NoticeByPackage,NoticeSummary,StaticHTML,WebApp -i scanner/out/results/scan-result.yml -o reporter/out/results
+                    /opt/ort/bin/ort $LOG_LEVEL report -f CycloneDX,NoticeByPackage,NoticeSummary,StaticHTML,WebApp -i $PROJECT_DIR/current-result.yml -o reporter/out/results
                 '''
             }
 
